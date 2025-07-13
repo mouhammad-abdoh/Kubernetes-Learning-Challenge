@@ -127,3 +127,15 @@ Before starting these challenges, you should have:
 - **Clean Up**: Use the provided cleanup scripts between challenges
 
 ---
+
+## 🤝 Contributing
+
+We welcome contributions! Whether you want to:
+- Fix typos or improve explanations
+- Add new examples or scenarios  
+- Create additional challenges
+- Improve documentation
+
+Please see our [Contributing Guide](./CONTRIBUTING.md) for details.
+
+---
