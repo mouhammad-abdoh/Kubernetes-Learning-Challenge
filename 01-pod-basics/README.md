@@ -50,6 +50,21 @@ A **Pod** is the smallest deployable unit in Kubernetes. Think of it as a "wrapp
 | `Failed` | All containers terminated, at least one failed |
 | `Unknown` | Pod state cannot be determined |
 
+### 📊 Container States Within Pods
+
+Each container in a Pod also has states:
+
+| State | Description | Common Causes |
+|-------|-------------|---------------|
+| `Waiting` | Container not yet running | Image pull, dependencies |
+| `Running` | Container executing normally | Normal operation |
+| `Terminated` | Container finished execution | Completed task, error, killed |
+
+**Container Restart Reasons:**
+- `Error`: Container exited with non-zero code
+- `OOMKilled`: Out of memory
+- `Completed`: Container finished successfully (exit code 0)
+
 ---
 
 ## 🛠️ Hands-On Challenges
@@ -209,7 +224,24 @@ kubectl logs multi-container-pod -c log-agent
 
 # Access the web-server container
 kubectl exec -it multi-container-pod -c web-server -- /bin/bash
+
+# From inside web-server container, try:
+curl localhost:80
+ps aux
+
+# Exit and try the log-agent container
+exit
+kubectl exec -it multi-container-pod -c log-agent -- /bin/sh
+
+# From inside log-agent container:
+wget -qO- localhost:80  # Can access web-server on localhost!
+exit
 ```
+
+**🔍 What this demonstrates:**
+- Containers in the same Pod share the same network (localhost)
+- They can communicate via localhost
+- Each container has its own filesystem but shares network and storage
 
 ---
 
@@ -252,6 +284,97 @@ kubectl get pod my-first-pod -o json
 kubectl get pods -w
 ```
 
+### Experiment 3: Pod Networking
+
+Understanding how Pod networking works:
+
+```bash
+# Get Pod IP and node information
+kubectl get pods -o wide
+
+# Access one Pod from another (create a temporary Pod)
+kubectl run test-pod --image=busybox:1.35 --rm -it --restart=Never -- sh
+
+# Inside the test Pod, try these commands:
+nslookup kubernetes.default
+ping <pod-ip-from-previous-command>
+wget -qO- http://<pod-ip>:80
+
+# Exit the test Pod
+exit
+```
+
+**🔍 What do you learn?**
+- Each Pod gets its own IP address
+- Pods can communicate directly via IP
+- DNS resolution works within the cluster
+
+### Experiment 4: Resource Limits
+
+Learn about Pod resource management:
+
+```yaml
+# Create resource-limited-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resource-limited-pod
+  labels:
+    app: resource-demo
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.21
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+```
+
+```bash
+kubectl apply -f resource-limited-pod.yaml
+
+# Check resource usage (if metrics-server is available)
+kubectl top pod resource-limited-pod
+
+# See resource info in Pod description
+kubectl describe pod resource-limited-pod
+```
+
+**🔍 Understanding Resources:**
+- **Requests**: Minimum resources guaranteed to the Pod
+- **Limits**: Maximum resources the Pod can use
+
+### Experiment 5: Labels and Annotations
+
+Understanding Pod metadata:
+
+```bash
+# Add labels to an existing Pod
+kubectl label pod my-first-pod version=1.0
+kubectl label pod my-first-pod tier=frontend
+
+# Add annotations
+kubectl annotate pod my-first-pod description="My first learning Pod"
+kubectl annotate pod my-first-pod created-by="learning-challenge"
+
+# View labels and annotations
+kubectl get pods --show-labels
+kubectl describe pod my-first-pod
+
+# Filter Pods by labels
+kubectl get pods -l app=nginx
+kubectl get pods -l environment=learning
+kubectl get pods -l app=nginx,environment=learning
+```
+
+**🔍 Key Concepts:**
+- **Labels**: Key-value pairs for identification and selection
+- **Annotations**: Metadata for tools and libraries (not for selection)
+
 ---
 
 ## ✅ Validation Checklist
@@ -266,6 +389,9 @@ After completing this challenge, you should be able to:
 - [ ] Use port forwarding to access Pod services
 - [ ] Understand Pod lifecycle states
 - [ ] Create multi-container Pods
+- [ ] Understand Pod networking and communication
+- [ ] Work with Pod labels and annotations
+- [ ] Set resource requests and limits
 
 ---
 
@@ -281,6 +407,15 @@ kubectl delete pod failing-pod
 
 # Or delete all at once
 kubectl delete -f simple-pod.yaml -f env-pod.yaml -f multi-container-pod.yaml -f failing-pod.yaml
+```
+
+**Also clean up the new Pods:**
+```bash
+kubectl delete pod resource-limited-pod
+
+# Delete Pods by label
+kubectl delete pods -l app=nginx
+kubectl delete pods -l environment=learning
 ```
 
 **Verify cleanup:**
@@ -322,10 +457,33 @@ Great job! You now understand the fundamentals of Pods. However, in real-world s
 - Try different shells: `/bin/sh` instead of `/bin/bash`
 - Some minimal images don't have bash installed
 
----
+## 📋 Quick Command Reference
 
-## 📚 Additional Resources
+```bash
+# Pod Management
+kubectl run <pod-name> --image=<image>
+kubectl apply -f <pod.yaml>
+kubectl get pods
+kubectl get pods -o wide
+kubectl describe pod <pod-name>
+kubectl delete pod <pod-name>
 
-- [Official Pod Documentation](https://kubernetes.io/docs/concepts/workloads/pods/)
-- [Pod Lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)
-- [kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
+# Pod Interaction
+kubectl logs <pod-name>
+kubectl logs <pod-name> -c <container-name>  # Multi-container Pod
+kubectl exec -it <pod-name> -- <command>
+kubectl exec -it <pod-name> -c <container-name> -- <command>  # Multi-container
+kubectl port-forward <pod-name> <local-port>:<pod-port>
+
+# Pod Information
+kubectl get pods --show-labels
+kubectl get pods -l <label-selector>
+kubectl top pod <pod-name>  # Resource usage
+kubectl get pods -o yaml
+kubectl get pods -o json
+
+# Labels and Annotations
+kubectl label pod <pod-name> <key>=<value>
+kubectl annotate pod <pod-name> <key>=<value>
+kubectl label pod <pod-name> <key>-  # Remove label
+```

@@ -72,7 +72,7 @@ Before starting these challenges, you should have:
 |-----------|-------|-------|--------|
 | 00 | [Kubernetes Setup](./kubernetes-setup/) | Local cluster with kind | ✅ Complete |
 | 01 | [Pod Basics](./01-pod-basics/) | Create and run a single Pod | ✅ Complete |
-| 02 | Deployments & ReplicaSets | Manage scaling, rolling updates | 🚧 Coming Soon |
+| 02 | [Deployments & ReplicaSets](./02-deployments-replicasets/) | Manage scaling, rolling updates | ✅ Complete |
 | 03 | Services | Expose your app internally & externally | 🚧 Coming Soon |
 | 04 | Namespaces | Isolate resources and organize workloads | 🚧 Coming Soon |
 
